@@ -57,7 +57,7 @@ now, the `jne` instruction after `cmp` means jump if not equal.
   
 but we want the opposite behavior. we want it to jump if equal, so we'll replace `jne` with `je`.
   
-this way, it will jump whenever the value is not `1` (which means our `a` variable is currently equal to `0`).
+this way, the jump is taken when the value is equal to 1. since our a variable is 0, the jump is not taken, so execution continues into the printf block.
   
 if you don't know the hexadecimal difference between `je` and `jne`, you can inspect the binary and compare the hex values used by these instructions in other locations.
 
