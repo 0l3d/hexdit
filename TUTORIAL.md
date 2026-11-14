@@ -1,4 +1,4 @@
-# simple tutorial for hexdit
+# Simple tutorial for Hexdit
   
 ```c
 #include <stdio.h>
@@ -17,39 +17,33 @@ this is the c code we will be experimenting with.
   
 first, let's compile this code using any compiler and then launch hexdit by passing the compiled binary as an argument.
   
-**gonna put an image here**
+<img width="1715" height="1032" alt="hexdit" src="https://github.com/user-attachments/assets/ef77dcb3-b6f0-4d9d-b1a5-510f63514c6e" />
   
 the interface consists of two main panels, the left and the right one.
   
-**gonna put an image here**
-  
 the purpose of the right panel is to make the hex data easier to understand and navigate.
-  
-**gonna put an image here**
   
 the left panel is where all the editing happens.
   
 at the bottom, we have a status bar showing your current position, modification status and some basic keyboard shortcuts.
   
-**gonna put an image here**
+<img width="1238" height="73" alt="bottompanel" src="https://github.com/user-attachments/assets/ac73015a-77ff-44ee-ad2c-1a897cc485b3" />
   
-`^` = CTRL
+`^` = CTRL + 
   
 `^S` = CTRL + S
   
 the goal of this tutorial is to bypass the `if` statement and reach the "Hello, World!" output, since running the original binary doesn't print anything.
   
-**gonna put an image here**
+<img width="730" height="69" alt="output" src="https://github.com/user-attachments/assets/278f0208-84ec-45d6-bfd7-b23597a26072" />
   
 now that we have our compiled binary open, let's search for `cmp`, which is the comparison instruction in x86.
-  
-^S = CTRL + S
   
 press ^S, write the phrase you want to search for and F6 to enter search mode. pressing F6 again moves to the next result, while F7 moves to the previous one.
   
 you can also press F3 to jump directly to the code start, as specified by the format.
   
-**gonna put an image here**
+<img width="648" height="65" alt="finding" src="https://github.com/user-attachments/assets/6c18d551-7704-430f-8fcd-ebd7c8290e3c" />
   
 when reverse-engineering a program you don't know, you usually have to figure things out as you go.
   
@@ -57,7 +51,7 @@ but in our case, we already know what we're looking for.
   
 if we have a stack location initialized to `0` before the `cmp` instruction (which represents our `a` variable), and then that same stack location is compared against `1`, we've found the code we're looking for.
   
-**gonna put an image here**
+<img width="1180" height="185" alt="codewewant" src="https://github.com/user-attachments/assets/679f0598-541d-4055-8dcb-59780767c437" />
   
 now, the `jne` instruction after `cmp` means jump if not equal.
   
@@ -66,17 +60,17 @@ but we want the opposite behavior. we want it to jump if equal, so we'll replace
 this way, it will jump whenever the value is not `1` (which means our `a` variable is currently equal to `0`).
   
 if you don't know the hexadecimal difference between `je` and `jne`, you can inspect the binary and compare the hex values used by these instructions in other locations.
-  
-**gonna put an image here**
+
+<img width="1167" height="61" alt="change" src="https://github.com/user-attachments/assets/ab74a746-2b07-4a76-9c2c-7edea61c2974" />
   
 after changing `JNE` to `JE`, our disassembler immediately recognizes the change and updates the disassembly on the right panel.
+  
+<img width="1202" height="65" alt="ok" src="https://github.com/user-attachments/assets/0bd52a67-05cb-45b2-b8c7-3ff379ad94df" />
   
 it now displays `je` instead of `jne`, so we can see that our modification was applied correctly.
   
 let's save the changes with `^S` and exit using `^Q`.
   
-**gonna put an image here**
-  
 now let's run our modified binary and see what happens:
   
-**gonna put an image here**
+<img width="732" height="128" alt="testing" src="https://github.com/user-attachments/assets/5675d45a-8a9c-4cdf-93d9-334fcdb9c658" />
