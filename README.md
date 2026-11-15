@@ -2,7 +2,8 @@
   
 Simple hex editor written in SL.
   
-  <img width="1683" height="1035" alt="image" src="https://github.com/user-attachments/assets/580aa057-d50a-4d63-9c2f-a82a2602aaf8" />
+<img width="1683" height="1035" alt="image" src="https://github.com/user-attachments/assets/580aa057-d50a-4d63-9c2f-a82a2602aaf8" />
+
 ## Usage
   
 Download the **latest** version of [SL](https://github.com/0l3d/sl).
