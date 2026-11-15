@@ -33,6 +33,7 @@ var tui_find_query = ""
 var tui_find_low = ""
 var tui_find_buf = ""
 var tui_find_input = false
+var tui_goto_mode = false
 
 var ins_starts = List.new()
 var ins_lens = List.new()
@@ -424,7 +425,61 @@ def tui_find_go -> bytes, size, step then
 	return 0
 end
 
+def tui_goto_resolve -> q then
+	var n = string.len($q)
+	var i = 0
+	var by_va = false
+	if types.char_to_int(string.char_at($q, 0)) equ 118 then
+		$by_va = true
+		$i = 1
+	end
+	if $n - $i > 2 then
+		if types.char_to_int(string.char_at($q, $i)) equ 48 and types.char_to_int(string.char_at($q, $i + 1)) equ 120 then
+			$i = $i + 2
+		end
+	end
+	if $i eqg $n then
+		return 0 - 1
+	end
+	var v = 0
+	while $i < $n then
+		var d = tui_hex_digit_value(string.char_at($q, $i))
+		if $d < 0 then
+			return 0 - 1
+		end
+		$v = $v * 16 + $d
+		$i = $i + 1
+	end
+	if $by_va then
+		return ff_va_to_off($v)
+	end
+	return $v
+end
+
+def tui_goto_run -> bytes, size, text then
+	var q = tui_lower_str($text)
+	if string.len($q) equ 0 then
+		$tui_status = "goto cancelled"
+		return 0
+	end
+	$tui_status = "bad or unmapped address"
+	var off = tui_goto_resolve($q)
+	if $off eqg 0 and $off < $size then
+		List.push($tui_back, $tui_pos)
+		tui_place($off, $bytes, $size)
+		$tui_status = "goto 0x" + tui_offset_hex($off)
+	end
+	return 0
+end
+
+def tui_goto_open then
+	$tui_goto_mode = true
+	$tui_find_buf = ""
+	$tui_find_input = true
+end
+
 def tui_find_open then
+	$tui_goto_mode = false
 	if tui_left_focused() then
 		hexdit_change_focused_panel()
 	end
@@ -434,6 +489,10 @@ end
 
 def tui_find_commit -> bytes, size then
 	$tui_find_input = false
+	if $tui_goto_mode then
+		$tui_goto_mode = false
+		return tui_goto_run($bytes, $size, $tui_find_buf)
+	end
 	if string.len($tui_find_buf) equ 0 then
 		$tui_status = "search cancelled"
 		return 0
@@ -502,6 +561,10 @@ def hexdit_init_bottom_panel then
 	console.cursor_position(0, $BOTTOM_BAR_POS)
 
 	var message = " " + tui_panel_name() + " 0x" + tui_offset_hex($tui_pos) + " [" + $ff_name + "]"
+	var cur_va = ff_off_to_va($tui_pos)
+	if $cur_va eqg 0 then
+		$message = $message + " va 0x" + tui_offset_hex($cur_va)
+	end
 	if $tui_sel_start eqg 0 then
 		$message = $message + " | unit 0x" + tui_offset_hex($tui_sel_start) + " len " + types.int_to_str($tui_sel_end - $tui_sel_start)
 	end
@@ -509,9 +572,13 @@ def hexdit_init_bottom_panel then
 	if $tui_modified then
 		$message = $message + " (modified)"
 	end
-	$message = $message + " | F3 code F4 jump F5 back F6 next F7 prev ^F find ^S save ^Q quit"
+	$message = $message + " | F3 code F4 jump F5 back F6 next F7 prev ^F find ^G goto ^S save ^Q quit"
 	if $tui_find_input then
-		$message = " search: " + $tui_find_buf + "_ | F6 find, F7 cancel, Left delete"
+		var plabel = " search: "
+		if $tui_goto_mode then
+			$plabel = " goto (hex, vHEX): "
+		end
+		$message = $plabel + $tui_find_buf + "_ | F6 ok, F7 cancel, Left delete"
 	end
 	io.print(tui_fit($message, $TUI_CONSOLE_WIDTH))
 	console.reset_color()
@@ -659,6 +726,8 @@ def hexdit_init_tui -> bytes, size, file_path then
 						$tui_status = "saved " + $file_path
 					elif $ckey equ 'f' and $mod equ $MOD_CTRL then
 						tui_find_open()
+					elif $ckey equ 'g' and $mod equ $MOD_CTRL then
+						tui_goto_open()
 					elif $size > 0 then
 						var digit = tui_hex_digit_value($ckey)
 						if $digit eqg 0 then

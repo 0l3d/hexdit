@@ -74,3 +74,50 @@ let's save the changes with `^S` and exit using `^Q`.
 now let's run our modified binary and see what happens:
   
 <img width="732" height="128" alt="testing" src="https://github.com/user-attachments/assets/5675d45a-8a9c-4cdf-93d9-334fcdb9c658" />
+
+# extras
+  
+you can go to any position in the code with ^G just like ^F
+
+if you want to go to your main code you need to do some calculations by hand
+  
+binaries have something called a virtual address (vaddr) and its calculated from the format header
+  
+you can calculate it yourself and enter the final result as hex but hexdit can do the calculation for you, just type a v before the hex. you dont need the 0x tag like `v1140`
+  
+you still need a little calculation to find main with a virtual address. remember rip is the address of the next instruction (where the current one ends) so for something like `lea rdi, [rip+0xD5]` the target is
+  
+```
+target_vaddr = instruction_vaddr + instruction_length + disp
+```
+  
+everything you need for this is in the bottom bar. va is the instruction_vaddr and len is the instruction_length. disp comes from the instruction itself. then type v + the result in ^G
+  
+use a separate calculator for the math, hexdit is not a calculator
+  
+if you want to enter a plain file offset instead use these formulas
+  
+```
+ELF: file_offset = vaddr - segment_vaddr + segment_offset
+PE:  file_offset = vaddr - ImageBase - section_va + section_raw
+```
+  
+for elf take the segment values from the phdr[n] LOAD line in the format header. for pe take ImageBase and the sec[n] line of the section your target is in
+  
+all the examples here are on an elf. on pe the idea is the same but you type the full address including ImageBase, like `v140001150`
+  
+you can go to the code start (not main, the start of the whole binary code) with F3 and go back with F5
+  
+here are the keybinds:
+  
+```
+CTRL + q => quit
+CTRL + s => save
+TAB      => switch between left (hex) and right (asm) panel
+F3       => goto code_start (specified by the format)
+F4       => goto the target if your cursor is on a jump or call
+F5       => go back after you used a goto
+CTRL + f => search text on the right panel
+F6 / F7  => next / previous search result
+CTRL + g => goto something (plain hex goes to the offset you typed, vHEX does the vaddr calculation for you)
+```

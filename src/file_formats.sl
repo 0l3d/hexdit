@@ -16,6 +16,9 @@ var ff_a_kinds = List.new()
 var ff_a_labels = List.new()
 var ff_m_pos = List.new()
 var ff_m_texts = List.new()
+var ff_s_va = List.new()
+var ff_s_off = List.new()
+var ff_s_sz = List.new()
 
 var FF_PE_DIRS = List.new()
 List.push($FF_PE_DIRS, "export", "import", "resource", "exception", "security", "basereloc", "debug", "architecture", "globalptr", "tls", "load_config", "bound_import", "iat", "delay_import", "clr", "reserved")
@@ -30,6 +33,9 @@ def ff_reset then
 	$ff_a_labels = List.new()
 	$ff_m_pos = List.new()
 	$ff_m_texts = List.new()
+	$ff_s_va = List.new()
+	$ff_s_off = List.new()
+	$ff_s_sz = List.new()
 	$ff_code_start = 0 - 1
 end
 
@@ -312,6 +318,40 @@ def ff_first_code_start then
 	return 0 - 1
 end
 
+def ff_seg_add -> va, off, sz then
+	if $sz > 0 then
+		List.push($ff_s_va, $va)
+		List.push($ff_s_off, $off)
+		List.push($ff_s_sz, $sz)
+	end
+end
+
+def ff_va_to_off -> va then
+	var i = 0
+	var n = List.len($ff_s_va)
+	while $i < $n then
+		var base = List.get($ff_s_va, $i)
+		if $va eqg $base and $va < $base + List.get($ff_s_sz, $i) then
+			return List.get($ff_s_off, $i) + ($va - $base)
+		end
+		$i = $i + 1
+	end
+	return 0 - 1
+end
+
+def ff_off_to_va -> off then
+	var i = 0
+	var n = List.len($ff_s_off)
+	while $i < $n then
+		var base = List.get($ff_s_off, $i)
+		if $off eqg $base and $off < $base + List.get($ff_s_sz, $i) then
+			return List.get($ff_s_va, $i) + ($off - $base)
+		end
+		$i = $i + 1
+	end
+	return 0 - 1
+end
+
 def ff_elf_type -> v then
 	if $v equ 1 then
 		return "REL"
@@ -577,6 +617,9 @@ def ff_parse_elf64 -> bytes, size then
 		var pvaddr = ff_u($bytes, $p + 16, 8)
 		var pfilesz = ff_u($bytes, $p + 32, 8)
 		ff_field_add($p, $phent, "phdr[" + ff_dec($i) + "] " + ff_elf_ptype($ptype) + " off=0x" + ff_hex($poff) + " vaddr=0x" + ff_hex($pvaddr) + " size=0x" + ff_hex($pfilesz))
+		if $ptype equ 1 then
+			ff_seg_add($pvaddr, $poff, $pfilesz)
+		end
 		if $ptype equ 1 and $entry eqg $pvaddr and $entry < $pvaddr + $pfilesz then
 			$code_off = $poff + ($entry - $pvaddr)
 		end
@@ -713,6 +756,7 @@ def ff_parse_pe64 -> bytes, size then
 		var rawptr = ff_u($bytes, $s + 20, 4)
 		var chars = ff_u($bytes, $s + 36, 4)
 		ff_field_add($s, 40, "sec[" + ff_dec($i) + "] " + $label + " va=0x" + ff_hex($va) + " raw=0x" + ff_hex($rawptr) + " size=0x" + ff_hex($rawsz))
+		ff_seg_add($image_base + $va, $rawptr, $rawsz)
 		if $rawsz > 0 then
 			var kind = "data"
 			var is_code = false
